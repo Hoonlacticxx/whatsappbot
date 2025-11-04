@@ -1,4 +1,6 @@
 // index.js
+import crypto from "crypto";
+globalThis.crypto = crypto;
 import {
   makeWASocket,
   useMultiFileAuthState,
