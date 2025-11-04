@@ -1,13 +1,13 @@
 {
-  "name": "watch-media-more-than-once",
+  "name": "whatsappbot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Bot que reenvía automáticamente fotos 'view once' de WhatsApp a tu chat personal",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "npm install && node ."
+    "start": "node index.js"
   },
-  "keywords": [],
+  "keywords": ["whatsapp", "baileys", "bot", "view-once"],
   "author": "Walter",
   "license": "ISC",
   "dependencies": {
