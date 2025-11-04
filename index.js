@@ -132,3 +132,56 @@ process.on("unhandledRejection", console.error);
 process.on("uncaughtException", console.error);
 
 /* Code migrated and improved for modern baileys - by your assistant */
+import {
+  makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  Browsers,
+} from "@whiskeysockets/baileys";
+import { Boom } from "@hapi/boom";
+import { pino } from "pino";
+import { keepAlive } from "./keepAlive.js";
+
+// --- FUNCIÓN PRINCIPAL ---
+async function connectToWA() {
+  const version = process.versions.node.split(".")[0];
+
+  // Verifica que la versión de Node sea compatible
+  if (+version < 18) {
+    console.log("❌ Necesitas Node.js versión 18 o superior para ejecutar este bot.");
+    return;
+  }
+
+  // Carga o crea la sesión de autenticación
+  const { state, saveCreds } = await useMultiFileAuthState("auth");
+
+  // Crea el socket de conexión con Baileys
+  const socket = makeWASocket({
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: true, // 👈 Muestra el QR directamente en la terminal
+    auth: state,
+    browser: Browsers.appropriate("Chrome"),
+  });
+
+  // Guarda los datos de sesión cuando cambien
+  socket.ev.on("creds.update", saveCreds);
+
+  // Maneja los eventos de conexión
+  socket.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "close") {
+      const shouldReconnect =
+        (lastDisconnect.error instanceof Boom)?.output?.statusCode !==
+        DisconnectReason.loggedOut;
+
+      console.log("⚠️ Conexión cerrada. Reconectando...");
+      if (shouldReconnect) connectToWA();
+    } else if (connection === "open") {
+      keepAlive();
+      console.log("✅ Bot conectado correctamente a WhatsApp");
+    }
+  });
+
+  // --- AQUÍ VA TU LÓGICA PRINCIPAL DEL BOT ---
+  socket.ev.on("messages.upsert", async ({
